@@ -1,0 +1,27 @@
+[tool.poetry]
+name = "yathzee"
+version = "0.1.0"
+description = ""
+authors = ["Vianney Gremmel <loutre.a@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+
+[tool.poetry.group.test]
+optional = true
+
+[tool.poetry.group.test.dependencies]
+behave = "^1.2.6"
+
+[tool.poetry.group.dev]
+optional = true
+
+[tool.poetry.group.dev.dependencies]
+black = "^22.10.0"
+pylint = "^2.15.5"
+mypy = "^0.990"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
