@@ -1,12 +1,20 @@
 from behave import given, when
+
 from yahtzee.errors import YahtzeeError
 from yahtzee.model import Game, Player, Players
 
 
 @given("a player named {name}")
 def create_player(context, name: str):
+    if not hasattr(context, "players"):
+        context.players = []
     player = Player(name)
     context.players.append(player)
+
+
+@given("no player")
+def no_player(context):
+    context.players = []
 
 
 @given("some players named")

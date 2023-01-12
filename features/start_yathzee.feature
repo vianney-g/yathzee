@@ -25,5 +25,6 @@ Feature: start a game
 		Then an error "A player named Alice already exists" is raised
 	
 	Scenario: can't start a game if no player joined
+		Given no player
 		When the game is created
 		Then an error "Can't create a game with no player" is raised

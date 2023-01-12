@@ -61,9 +61,8 @@ class Category(Enum):
     CHANCE = "Chance"
     YAHTZEE_BONUS = "Yahtzee Bonus"
 
-    @classmethod
-    @property
-    def top_section(cls) -> set[Self]:
+    @staticmethod
+    def top_section() -> set["Category"]:
         return {
             Category.ACES,
             Category.TWOS,
@@ -82,7 +81,7 @@ class ScoreLine:
 
     @property
     def is_in_top_section(self) -> bool:
-        return self.category in Category.top_section
+        return self.category in Category.top_section()
 
     @property
     def score_value(self) -> Score:
