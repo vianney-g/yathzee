@@ -1,4 +1,6 @@
-.PHONY: tests mypy
+.PHONY: all tests mypy
+
+all: mypy tests
 
 tests:
 	behave
