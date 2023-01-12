@@ -1,6 +1,6 @@
 from behave import given, then
 
-from yahtzee.model import Combination, Dices, DiceValue
+from yahtzee.dices import Combination, Dices
 
 
 @given("the dices rolled {d1:d} {d2:d} {d3:d} {d4:d} {d5:d}")

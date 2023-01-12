@@ -1,7 +1,7 @@
 from behave import given, when
 
 from yahtzee.errors import YahtzeeError
-from yahtzee.model import Game, Player, Players
+from yahtzee.game import Game, Player, Players
 
 
 @given("a player named {name}")

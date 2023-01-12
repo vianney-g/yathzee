@@ -1,6 +1,7 @@
 from behave import given, then
 
-from yahtzee.model import Category, Player, Score, Scorecard
+from yahtzee.game import Player
+from yahtzee.score import Category, Score, Scorecard
 
 
 @then("{player_name} score is equal to {score:d}")
