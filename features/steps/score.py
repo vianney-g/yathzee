@@ -1,12 +1,14 @@
 from behave import given, then
 
+from yahtzee.app import get_game
 from yahtzee.game import Player
 from yahtzee.score import Category, Score, Scorecard
 
 
 @then("{player_name} score is equal to {score:d}")
 def assert_score(context, player_name: str, score: int):
-    player: Player = next(p for p in context.players if p.name == player_name)
+    game = get_game(context.game_uuid)
+    player: Player = next(p for p in game.state.players if p.name == player_name)
     assert player.score == score, f"Unexpected score {score}"
 
 

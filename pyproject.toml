@@ -5,6 +5,8 @@ description = ""
 authors = ["Vianney Gremmel <loutre.a@gmail.com>"]
 readme = "README.md"
 
+[tool.pyright]
+
 [tool.poetry.dependencies]
 python = "^3.11"
 

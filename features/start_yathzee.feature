@@ -22,9 +22,9 @@ Feature: start a game
 		  | Alice |
 		  | Alice |
 		When the game is created
-		Then an error "A player named Alice already exists" is raised
+		Then just 1 player is in the game
 	
 	Scenario: can't start a game if no player joined
 		Given no player
 		When the game is created
-		Then an error "Can't create a game with no player" is raised
+		Then the game can not be started
