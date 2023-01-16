@@ -1,2 +1,0 @@
-class YahtzeeError(Exception):
-    pass

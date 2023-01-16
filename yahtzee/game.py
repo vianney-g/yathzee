@@ -6,8 +6,7 @@ from logging import getLogger
 from typing import Iterator
 from uuid import UUID, uuid4
 
-from .commands import (AddPlayer, Command, CreateGame, Err, Ok, Result,
-                       StartGame)
+from .commands import AddPlayer, Command, Err, Ok, Result, StartGame
 from .events import Event, GameCreated, GameStarted, PlayerAdded
 from .score import Scorecard
 
@@ -65,20 +64,20 @@ class GameState:
     status: GameStatus = GameStatus.START_UP
 
     @singledispatchmethod
-    def apply(self, event: Event) -> None:
+    def apply(self, event: Event, /) -> None:
         logger.warning("Unused event %s", event)
 
     @apply.register
-    def game_created(self, event: GameCreated):
+    def game_created(self, event: GameCreated, /):
         self.game_id = event.uuid
 
     @apply.register
-    def player_added(self, event: PlayerAdded):
+    def player_added(self, event: PlayerAdded, /):
         self.players.add(Player(event.player_name))
         self.version += 1
 
     @apply.register
-    def game_started(self, event: GameStarted):
+    def game_started(self, _: GameStarted, /):
         self.state = GameStatus.STARTED
         self.version += 1
 
@@ -94,12 +93,12 @@ class Game:
         self.events.append(event)
 
     @singledispatchmethod
-    def execute(self, command: Command) -> Result:
+    def execute(self, command: Command, /) -> Result:
         logger.warning("Unhandled command %s", command)
         return Ok()
 
     @execute.register
-    def add_player(self, command: AddPlayer) -> Result:
+    def add_player(self, command: AddPlayer, /) -> Result:
         if self.state.status is not GameStatus.START_UP:
             return Err(f"You can't add a player in an already started game")
 
@@ -111,7 +110,7 @@ class Game:
         return Ok()
 
     @execute.register
-    def start_game(self, command: StartGame) -> Result:
+    def start_game(self, _: StartGame, /) -> Result:
         if self.state.status is not GameStatus.START_UP:
             # idempotent call
             return Ok()

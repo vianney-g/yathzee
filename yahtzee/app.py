@@ -1,6 +1,5 @@
 from functools import singledispatch
 from logging import getLogger
-from typing import Callable
 from uuid import UUID
 
 from .commands import AddPlayer, Command, CreateGame, Err, Ok, Result
@@ -29,12 +28,12 @@ def commit_if_ok(result: Result, game: Game) -> None:
 
 
 @singledispatch
-def execute(command: Command) -> Result:
+def execute(command: Command, /) -> Result:
     return Err(f"Unknown command {command}")
 
 
 @execute.register
-def create_game(command: CreateGame) -> Result:
+def create_game(_: CreateGame, /) -> Result:
     game = Game.new()
     events().add_events(game.uuid, game.events)
 
@@ -42,7 +41,7 @@ def create_game(command: CreateGame) -> Result:
 
 
 @execute.register
-def add_player(command: AddPlayer) -> Result:
+def add_player(command: AddPlayer, /) -> Result:
     game = get_game(command.game)
     result = game.execute(command)
     commit_if_ok(result, game)
