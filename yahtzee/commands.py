@@ -1,6 +1,6 @@
 import dataclasses
 from abc import ABC
-from typing import Generic, NoReturn, TypeVar
+from typing import Any, Generic, NoReturn, TypeVar, overload
 from uuid import UUID
 
 T = TypeVar("T", covariant=True)  # success type
@@ -12,7 +12,17 @@ class ResultError(Exception):
 
 
 class Ok(Generic[T]):
-    def __init__(self, value: T = True):
+    _value: T
+
+    @overload
+    def __init__(self):
+        ...
+
+    @overload
+    def __init__(self, value: T):
+        ...
+
+    def __init__(self, value: Any = True):
         self._value = value
 
     def is_ok(self) -> bool:
@@ -26,7 +36,17 @@ class Ok(Generic[T]):
 
 
 class Err(Generic[E]):
-    def __init__(self, value: E = True):
+    _value: E
+
+    @overload
+    def __init__(self):
+        ...
+
+    @overload
+    def __init__(self, value: E):
+        ...
+
+    def __init__(self, value: Any = True):
         self._value = value
 
     def is_ok(self) -> bool:

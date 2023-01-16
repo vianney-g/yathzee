@@ -28,7 +28,7 @@ class Player:
 
 
 class Players:
-    def __init__(self):
+    def __init__(self) -> None:
         self._players: list[Player] = []
         self._turn_cycle: Iterator[Player] | None = None
 

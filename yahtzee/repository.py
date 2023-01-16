@@ -14,7 +14,7 @@ class EventsStore(Protocol):
 
 
 class InMemoryEventsStore(EventsStore):
-    def __init__(self):
+    def __init__(self) -> None:
         self._events: dict[UUID, list[Event]] = defaultdict(list)
 
     def get_events(self, uuid: UUID) -> list[Event]:
@@ -27,7 +27,7 @@ class InMemoryEventsStore(EventsStore):
 _events: None | EventsStore = None
 
 
-def set_events_store(repo: EventsStore):
+def set_events_store(repo: EventsStore) -> None:
     """Initialize the game repository"""
     global _events
     _events = repo
