@@ -28,7 +28,7 @@ def create_game(context):
 
 
 @then("the game can not be started")
-def create_game(context):
+def game_cannot_start(context):
     start = StartGame(context.game_uuid)
     result = execute(start)
     assert result.is_err()

@@ -1,9 +1,9 @@
 import dataclasses
+from collections.abc import Iterator
 from enum import Enum
 from functools import singledispatchmethod
 from itertools import cycle
 from logging import getLogger
-from typing import Iterator
 from uuid import UUID, uuid4
 
 from .commands import AddPlayer, Command, Err, Ok, Result, StartGame
@@ -100,7 +100,7 @@ class Game:
     @execute.register
     def add_player(self, command: AddPlayer, /) -> Result:
         if self.state.status is not GameStatus.START_UP:
-            return Err(f"You can't add a player in an already started game")
+            return Err("You can't add a player in an already started game")
 
         player = Player(command.player_name)
         if player in self.state.players:
@@ -115,7 +115,7 @@ class Game:
             # idempotent call
             return Ok()
         if not self.state.players:
-            return Err(f"You can't start a game without any player")
+            return Err("You can't start a game without any player")
         self.append(GameStarted())
         return Ok()
 
