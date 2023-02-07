@@ -192,11 +192,11 @@ class Game:
         if self.board.status is not GameStatus.NEW:
             return Err("You can't add a player in an already started game")
 
-        player = Player(command.player_name)
+        player = Player(command.name)
         if player in self.board.players:
             return Err(f"Player `{player}` is already in game")
 
-        self.append(evt.PlayerAdded(command.player_name))
+        self.append(evt.PlayerAdded(command.name))
         return Ok()
 
     @execute.register
@@ -213,20 +213,20 @@ class Game:
     def roll_dice(self, cmd: cmd.RollDices, /) -> Result:
         if self.board.status is not GameStatus.STARTED:
             # idempotent call
-            return Err(f"{cmd.player_name}, the game isn't started!")
-        if self.board.round.player_turn.player.name != cmd.player_name:
-            return Err(f"{cmd.player_name}, it's not your turn to play")
+            return Err(f"{cmd.player}, the game isn't started!")
+        if self.board.round.player_turn.player.name != cmd.player:
+            return Err(f"{cmd.player}, it's not your turn to play")
         return Ok()
 
     @execute.register
     def score(self, cmd: cmd.Score, /) -> Result:
-        if self.board.round.current_player.name != cmd.player_name:
-            return Err(f"{cmd.player_name}, it's not your turn to play")
+        if self.board.round.current_player.name != cmd.player:
+            return Err(f"{cmd.player}, it's not your turn to play")
         category = Category(cmd.category)
         combination = Combination(cmd.category)
         score = combination.score(self.board.dices)
 
-        self.append(evt.PointsScored(cmd.player_name, category.value, score))
+        self.append(evt.PointsScored(cmd.player, category.value, score))
         next_round = self.board.round.next_round()
         self.append(
             evt.TurnChanged(

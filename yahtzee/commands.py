@@ -84,7 +84,7 @@ class GameCommand(Command):
 
 @dataclass(frozen=True)
 class AddPlayer(GameCommand):
-    player_name: str
+    name: str
 
 
 @dataclass(frozen=True)
@@ -94,10 +94,10 @@ class StartGame(GameCommand):
 
 @dataclass(frozen=True)
 class RollDices(GameCommand):
-    player_name: str
+    player: str
 
 
 @dataclass(frozen=True)
 class Score(GameCommand):
-    player_name: str
+    player: str
     category: str
