@@ -147,7 +147,7 @@ class Board:
 
     @apply.register
     def player_added(self, event: evt.PlayerAdded, /):
-        self.players.append(Player(event.player_name))
+        self.players.append(Player(event.player))
         self.inc_version()
 
     def _player_by_name(self, player_name: str) -> Player:
@@ -161,7 +161,7 @@ class Board:
 
     @apply.register
     def points_scored(self, event: evt.PointsScored):
-        player = self._player_by_name(event.player_name)
+        player = self._player_by_name(event.player)
         player.scorecard[Category(event.category)] = event.points
         self.inc_version()
 

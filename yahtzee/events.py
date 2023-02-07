@@ -14,7 +14,7 @@ class GameCreated(Event):
 
 @dataclass
 class PlayerAdded(Event):
-    player_name: str
+    player: str
 
 
 @dataclass
@@ -29,7 +29,7 @@ class GameStarted(Event):
 
 @dataclass
 class PointsScored(Event):
-    player_name: str
+    player: str
     category: str
     points: int
 
