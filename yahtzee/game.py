@@ -1,4 +1,4 @@
-import dataclasses
+from dataclasses import dataclass, field
 from enum import Enum
 from functools import singledispatchmethod
 from logging import getLogger
@@ -14,10 +14,10 @@ from .score import Category, Scorecard
 logger = getLogger(__name__)
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Player:
     name: str
-    scorecard: Scorecard = dataclasses.field(default_factory=Scorecard)
+    scorecard: Scorecard = field(default_factory=Scorecard)
 
     def __hash__(self) -> int:
         return hash(self.name)
@@ -44,7 +44,7 @@ Players = list[Player]
 RoundNumber = int
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class PlayerTurn:
     player: Player
     attempted_rolls: int = 0
@@ -60,7 +60,7 @@ class PlayerTurn:
         return cls(Player.nobody())
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class Round:
     """Single game round"""
 
@@ -114,7 +114,7 @@ class GameStatus(Enum):
     OVER = "over"
 
 
-@dataclasses.dataclass
+@dataclass
 class Board:
     players: Players
     status: GameStatus
@@ -172,11 +172,11 @@ class Board:
         self.inc_version()
 
 
-@dataclasses.dataclass
+@dataclass
 class Game:
     uuid: UUID
     board: Board
-    events: list[evt.Event] = dataclasses.field(default_factory=list)
+    events: list[evt.Event] = field(default_factory=list)
 
     def append(self, event: evt.Event) -> None:
         self.board.apply(event)

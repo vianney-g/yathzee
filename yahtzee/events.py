@@ -1,5 +1,5 @@
-import dataclasses
 from abc import ABC
+from dataclasses import dataclass
 from uuid import UUID
 
 
@@ -7,34 +7,34 @@ class Event(ABC):
     """Event in the system"""
 
 
-@dataclasses.dataclass
+@dataclass
 class GameCreated(Event):
     uuid: UUID
 
 
-@dataclasses.dataclass
+@dataclass
 class PlayerAdded(Event):
     player_name: str
 
 
-@dataclasses.dataclass
+@dataclass
 class ErrorRaised(Event):
     msg: str
 
 
-@dataclasses.dataclass
+@dataclass
 class GameStarted(Event):
     pass
 
 
-@dataclasses.dataclass
+@dataclass
 class PointsScored(Event):
     player_name: str
     category: str
     points: int
 
 
-@dataclasses.dataclass
+@dataclass
 class TurnChanged(Event):
     new_player: str
     round_number: int
