@@ -4,8 +4,9 @@ from uuid import UUID
 
 from .commands import Command, CreateGame, Err, GameCommand, Ok, Result
 from .events import ErrorRaised
-from .game import Game, GameViews
+from .game import Game
 from .repository import InMemoryEventsStore, events, set_events_store
+from .views import GameViews
 
 logger = getLogger(__name__)
 
