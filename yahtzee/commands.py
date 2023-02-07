@@ -1,5 +1,5 @@
-import dataclasses
 from abc import ABC
+from dataclasses import dataclass
 from typing import Any, Generic, NoReturn, TypeVar, overload
 from uuid import UUID
 
@@ -34,6 +34,9 @@ class Ok(Generic[T]):
     def unwrap(self) -> T:
         return self._value
 
+    def err(self) -> None:
+        return None
+
 
 class Err(Generic[E]):
     _value: E
@@ -58,6 +61,9 @@ class Err(Generic[E]):
     def unwrap(self) -> NoReturn:
         raise ResultError(self._value)
 
+    def err(self) -> E:
+        return self._value
+
 
 Result = Ok[T] | Err[E]
 
@@ -66,17 +72,32 @@ class Command(ABC):
     """Send a command to yahtzee game"""
 
 
-@dataclasses.dataclass(frozen=True)
+@dataclass(frozen=True)
 class CreateGame(Command):
     pass
 
 
-@dataclasses.dataclass(frozen=True)
-class AddPlayer(Command):
+@dataclass(frozen=True)
+class GameCommand(Command):
     game: UUID
+
+
+@dataclass(frozen=True)
+class AddPlayer(GameCommand):
     player_name: str
 
 
-@dataclasses.dataclass(frozen=True)
-class StartGame(Command):
-    game: UUID
+@dataclass(frozen=True)
+class StartGame(GameCommand):
+    pass
+
+
+@dataclass(frozen=True)
+class RollDices(GameCommand):
+    player_name: str
+
+
+@dataclass(frozen=True)
+class Score(GameCommand):
+    player_name: str
+    category: str

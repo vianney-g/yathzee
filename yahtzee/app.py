@@ -2,8 +2,9 @@ from functools import singledispatch
 from logging import getLogger
 from uuid import UUID
 
-from .commands import AddPlayer, Command, CreateGame, Err, Ok, Result
-from .game import Game
+from .commands import Command, CreateGame, Err, GameCommand, Ok, Result
+from .events import ErrorRaised
+from .game import Game, GameViews
 from .repository import InMemoryEventsStore, events, set_events_store
 
 logger = getLogger(__name__)
@@ -18,12 +19,18 @@ def get_game(uuid: UUID) -> Game:
     return Game.from_events(uuid, game_events)
 
 
+def views(uuid: UUID) -> GameViews:
+    game = get_game(uuid)
+    return GameViews(game)
+
+
 def commit_if_ok(result: Result, game: Game) -> None:
     match result:
         case Ok():
             game_events = events().get_events(game.uuid)
             events().add_events(game.uuid, game.events[len(game_events) :])
-        case Err():
+        case Err() as error:
+            events().add_events(game.uuid, [ErrorRaised(error.err())])
             logger.error(result)
 
 
@@ -41,7 +48,7 @@ def create_game(_: CreateGame, /) -> Result:
 
 
 @execute.register
-def add_player(command: AddPlayer, /) -> Result:
+def game_command(command: GameCommand, /) -> Result:
     game = get_game(command.game)
     result = game.execute(command)
     commit_if_ok(result, game)

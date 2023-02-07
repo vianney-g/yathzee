@@ -18,5 +18,23 @@ class PlayerAdded(Event):
 
 
 @dataclasses.dataclass
+class ErrorRaised(Event):
+    msg: str
+
+
+@dataclasses.dataclass
 class GameStarted(Event):
     pass
+
+
+@dataclasses.dataclass
+class PointsScored(Event):
+    player_name: str
+    category: str
+    points: int
+
+
+@dataclasses.dataclass
+class TurnChanged(Event):
+    new_player: str
+    round_number: int

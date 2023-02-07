@@ -1,12 +1,22 @@
 """Dices and combinations"""
 import dataclasses
-from enum import Enum
+from collections.abc import Iterator
+from enum import Enum, IntEnum
 from itertools import groupby
-from typing import Iterator, Literal
+from random import choice
 
 from .score import Score
 
-DiceValue = Literal[1, 2, 3, 4, 5, 6]
+
+class DiceValue(IntEnum):
+    ONE = 1
+    TWO = 2
+    THREE = 3
+    FOUR = 4
+    FIVE = 5
+    SIX = 6
+
+
 DicesSet = list[DiceValue]
 
 
@@ -72,6 +82,17 @@ class Dices:
     dice_4: DiceValue
     dice_5: DiceValue
 
+    @classmethod
+    def roll(cls):
+        values = list(DiceValue)
+        return cls(
+            choice(values),
+            choice(values),
+            choice(values),
+            choice(values),
+            choice(values),
+        )
+
     def __iter__(self) -> Iterator[DiceValue]:
         yield self.dice_1
         yield self.dice_2
@@ -85,32 +106,32 @@ class Dices:
     @property
     def aces(self) -> Iterator[DiceValue]:
         """ """
-        return self._dices_of_value(1)
+        return self._dices_of_value(DiceValue.ONE)
 
     @property
     def twos(self) -> Iterator[DiceValue]:
         """ """
-        return self._dices_of_value(2)
+        return self._dices_of_value(DiceValue.TWO)
 
     @property
     def threes(self) -> Iterator[DiceValue]:
         """ """
-        return self._dices_of_value(3)
+        return self._dices_of_value(DiceValue.THREE)
 
     @property
     def fours(self) -> Iterator[DiceValue]:
         """ """
-        return self._dices_of_value(4)
+        return self._dices_of_value(DiceValue.FOUR)
 
     @property
     def fives(self) -> Iterator[DiceValue]:
         """ """
-        return self._dices_of_value(5)
+        return self._dices_of_value(DiceValue.FIVE)
 
     @property
     def sixes(self) -> Iterator[DiceValue]:
         """ """
-        return self._dices_of_value(6)
+        return self._dices_of_value(DiceValue.SIX)
 
     @property
     def _dices_groups_by_value(self) -> list[DicesSet]:

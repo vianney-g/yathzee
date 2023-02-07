@@ -2,16 +2,16 @@ Feature: start a game
 
 	Scenario: start a game with one player
 		Given a player named John
-		When the game is created
+		And the game is started
 		Then John score is equal to 0
 		And it's John's turn to play
-	
+
 	Scenario: start a game with two players
 		Given some players named
 		  | name  |
 		  | Alice |
 		  | Bob   |
-		When the game is created
+		And the game is started
 		Then Alice score is equal to 0
 		And Bob score is equal to 0
 		And it's Alice's turn to play
@@ -21,9 +21,9 @@ Feature: start a game
 		  | name  |
 		  | Alice |
 		  | Alice |
-		When the game is created
+		And the game is started
 		Then just 1 player is in the game
-	
+
 	Scenario: can't start a game if no player joined
 		Given no player
 		When the game is created

@@ -1,6 +1,6 @@
 from behave import given, then, when
 
-from yahtzee.app import execute, get_game
+from yahtzee.app import execute, views
 from yahtzee.commands import AddPlayer, StartGame
 
 
@@ -22,6 +22,11 @@ def create_players(context):
         execute(add_player)
 
 
+@given("the game is started")
+def start_game(context):
+    execute(StartGame(context.game_uuid))
+
+
 @when("the game is created")
 def create_game(context):
     assert hasattr(context, "game_uuid")
@@ -36,6 +41,5 @@ def game_cannot_start(context):
 
 @then("just 1 player is in the game")
 def one_player_in_the_game(context):
-    game = get_game(context.game_uuid)
-    players_nb = len(game.state.players)
+    players_nb = len(views(context.game_uuid).players)
     assert players_nb == 1, f"Expecting game to have 1 player, got {players_nb}"

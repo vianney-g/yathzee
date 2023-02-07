@@ -8,7 +8,7 @@ from yahtzee.score import Category, Score, Scorecard
 @then("{player_name} score is equal to {score:d}")
 def assert_score(context, player_name: str, score: int):
     game = get_game(context.game_uuid)
-    player: Player = next(p for p in game.state.players if p.name == player_name)
+    player: Player = next(p for p in game.board.players if p.name == player_name)
     assert player.score == score, f"Unexpected score {score}"
 
 

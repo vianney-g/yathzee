@@ -1,6 +1,6 @@
 import dataclasses
+from collections.abc import Iterator
 from enum import Enum
-from typing import Iterator
 
 Score = int
 
@@ -91,3 +91,11 @@ class Scorecard:
     @property
     def is_complete(self) -> bool:
         return all(line.is_scored for line in self)
+
+    def asdict(self) -> dict[str, int | None]:
+        categories = {line.category.value: line.score for line in self}
+        return {
+            **categories,
+            "upper_section_total": self.upper_section_score,
+            "total": self.score,
+        }
