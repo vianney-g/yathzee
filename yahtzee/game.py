@@ -1,3 +1,4 @@
+from abc import ABC
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import singledispatchmethod
@@ -144,6 +145,7 @@ class Board:
     @apply.register
     def game_created(self, event: evt.GameCreated, /):
         self.game_id = event.uuid
+        self.status = GameStatus.PENDING
 
     @apply.register
     def player_added(self, event: evt.PlayerAdded, /):
@@ -173,7 +175,7 @@ class Board:
 
 
 @dataclass
-class Game:
+class Game(ABC):
     uuid: UUID
     board: Board
     events: list[evt.Event] = field(default_factory=list)
@@ -182,16 +184,50 @@ class Game:
         self.board.apply(event)
         self.events.append(event)
 
-    @singledispatchmethod
     def execute(self, command: cmd.Command, /) -> Result:
         logger.warning("Unhandled command %s", command)
-        return Ok()
+        return Err(f"Unhandled command {command}")
+
+    @classmethod
+    def new(cls) -> "Game":
+        new_uuid = uuid4()
+        return Game.from_events(new_uuid, [])
+
+    @classmethod
+    def from_events(cls, uuid: UUID, events: list[evt.Event]) -> "Game":
+        board = Board.new()
+        for event in events:
+            board.apply(event)
+        match board.status:
+            case GameStatus.NEW:
+                klass = NewGame
+            case GameStatus.PENDING:
+                klass = PendingGame
+            case GameStatus.STARTED:
+                klass = StartedGame
+            case _:
+                raise NotImplementedError
+        return klass(uuid=uuid, board=board, events=events)
+
+
+class NewGame(Game):
+    @singledispatchmethod
+    def execute(self, command: cmd.Command, /) -> Result:
+        return super().execute(command)
+
+    @execute.register
+    def create_game(self, _: cmd.CreateGame, /) -> Result:
+        self.append(evt.GameCreated(self.uuid))
+        return Ok({"uuid": self.uuid})
+
+
+class PendingGame(Game):
+    @singledispatchmethod
+    def execute(self, command: cmd.Command, /) -> Result:
+        return super().execute(command)
 
     @execute.register
     def add_player(self, command: cmd.AddPlayer, /) -> Result:
-        if self.board.status is not GameStatus.NEW:
-            return Err("You can't add a player in an already started game")
-
         player = Player(command.name)
         if player in self.board.players:
             return Err(f"Player `{player}` is already in game")
@@ -201,19 +237,19 @@ class Game:
 
     @execute.register
     def start_game(self, _: cmd.StartGame, /) -> Result:
-        if self.board.status is not GameStatus.NEW:
-            # idempotent call
-            return Ok()
         if not self.board.players:
             return Err("You can't start a game without any player")
         self.append(evt.GameStarted())
         return Ok()
 
+
+class StartedGame(Game):
+    @singledispatchmethod
+    def execute(self, command: cmd.Command, /) -> Result:
+        return super().execute(command)
+
     @execute.register
     def roll_dice(self, cmd: cmd.RollDices, /) -> Result:
-        if self.board.status is not GameStatus.STARTED:
-            # idempotent call
-            return Err(f"{cmd.player}, the game isn't started!")
         if self.board.round.player_turn.player.name != cmd.player:
             return Err(f"{cmd.player}, it's not your turn to play")
         return Ok()
@@ -235,15 +271,3 @@ class Game:
             )
         )
         return Ok()
-
-    @classmethod
-    def new(cls) -> "Game":
-        uuid = uuid4()
-        return Game.from_events(uuid, [evt.GameCreated(uuid)])
-
-    @classmethod
-    def from_events(cls, uuid: UUID, events: list[evt.Event]) -> "Game":
-        game = cls(uuid, Board.new())
-        for event in events:
-            game.append(event)
-        return game
