@@ -3,8 +3,8 @@ from collections.abc import Callable
 from functools import singledispatch
 
 from . import commands as cmd
-from . import events as evt
 from .commands import Err, Ok, Result
+from .game import events as evt
 from .game.dices import Combination
 from .game.game import Game, GameStatus, Player
 from .game.score import Category

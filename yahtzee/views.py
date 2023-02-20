@@ -1,9 +1,13 @@
+from uuid import UUID
+
 from .game.game import Game
+from .repository import EventsStore
 
 
 class GameViews:
-    def __init__(self, game: Game):
-        self._game = game
+    def __init__(self, game_uuid: UUID, repository: EventsStore):
+        self._game = Game.from_events(game_uuid, repository.get_game_events(game_uuid))
+        self.logs = repository.get_events(game_uuid)
 
     def player(self, player_name: str) -> dict:
         for player in self._game.board.players:

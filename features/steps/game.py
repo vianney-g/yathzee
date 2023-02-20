@@ -1,6 +1,6 @@
 from behave import then, when
 
-from yahtzee.app import execute, get_game, views
+from yahtzee.app import execute, views
 from yahtzee.commands import RollDices, Score
 from yahtzee.events import ErrorRaised
 
@@ -28,9 +28,9 @@ def scores(context, player_name: str, category: str):
 
 @then('An error said "{error_msg}"')
 def error_raised(context, error_msg: str):
-    game = get_game(context.game_uuid)
+    logs = views(context.game_uuid).logs
     # We just search the error has been raised in the 10 last events
-    for event in game.events[-10:]:
+    for event in logs[-10:]:
         if isinstance(event, ErrorRaised) and event.msg == error_msg:
             break
     else:

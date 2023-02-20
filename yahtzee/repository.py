@@ -1,15 +1,22 @@
 from collections import defaultdict
+from collections.abc import Iterable, Sequence
 from typing import Protocol
 from uuid import UUID
 
-from .events import Event
+from .events import SystemEvent
+from .game.events import Event as GameEvent
+
+Event = GameEvent | SystemEvent
 
 
 class EventsStore(Protocol):
-    def get_events(self, uuid: UUID) -> list[Event]:
+    def get_events(self, uuid: UUID) -> Iterable[Event]:
         ...
 
-    def add_events(self, uuid: UUID, events: list[Event]) -> None:
+    def get_game_events(self, uuid: UUID) -> Iterable[GameEvent]:
+        ...
+
+    def add_events(self, uuid: UUID, events: Sequence[Event]) -> None:
         ...
 
 
@@ -20,7 +27,15 @@ class InMemoryEventsStore(EventsStore):
     def get_events(self, uuid: UUID) -> list[Event]:
         return self._events[uuid]
 
-    def add_events(self, uuid: UUID, events: list[Event]) -> None:
+    def get_game_events(self, uuid: UUID) -> Iterable[GameEvent]:
+        for event in self.get_events(uuid):
+            match event:
+                case SystemEvent():
+                    continue
+                case GameEvent():
+                    yield event
+
+    def add_events(self, uuid: UUID, events: Sequence[Event]) -> None:
         self._events[uuid].extend(events)
 
 
