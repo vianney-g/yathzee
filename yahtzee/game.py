@@ -1,7 +1,7 @@
-from abc import ABC
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from enum import Enum
-from functools import singledispatchmethod
+from functools import singledispatch, singledispatchmethod
 from logging import getLogger
 from uuid import UUID, uuid4
 
@@ -32,6 +32,10 @@ class Player:
 
     def __bool__(self) -> bool:
         return self is NOBODY_SENTINEL
+
+    def is_playing(self, board: "Board") -> bool:
+        """Return True if it's player's turn"""
+        return self is board.round.current_player
 
     @classmethod
     def nobody(cls) -> "Player":
@@ -114,6 +118,9 @@ class GameStatus(Enum):
     STARTED = "started"
     OVER = "over"
 
+    def execute(self, command: cmd.Command, game: "Game") -> Result:
+        return _STATES[self](command, game)
+
 
 @dataclass
 class Board:
@@ -152,7 +159,7 @@ class Board:
         self.players.append(Player(event.player))
         self.inc_version()
 
-    def _player_by_name(self, player_name: str) -> Player:
+    def get_player(self, player_name: str) -> Player:
         return next(player for player in self.players if player.name == player_name)
 
     @apply.register
@@ -163,19 +170,19 @@ class Board:
 
     @apply.register
     def points_scored(self, event: evt.PointsScored):
-        player = self._player_by_name(event.player)
+        player = self.get_player(event.player)
         player.scorecard[Category(event.category)] = event.points
         self.inc_version()
 
     @apply.register
     def turn_changed(self, event: evt.TurnChanged):
-        player = self._player_by_name(event.new_player)
+        player = self.get_player(event.new_player)
         self.round = Round.from_players(self.players, event.round_number, player)
         self.inc_version()
 
 
 @dataclass
-class Game(ABC):
+class Game:
     uuid: UUID
     board: Board
     events: list[evt.Event] = field(default_factory=list)
@@ -185,8 +192,7 @@ class Game(ABC):
         self.events.append(event)
 
     def execute(self, command: cmd.Command, /) -> Result:
-        logger.warning("Unhandled command %s", command)
-        return Err(f"Unhandled command {command}")
+        return self.board.status.execute(command, self)
 
     @classmethod
     def new(cls) -> "Game":
@@ -198,76 +204,90 @@ class Game(ABC):
         board = Board.new()
         for event in events:
             board.apply(event)
-        match board.status:
-            case GameStatus.NEW:
-                klass = NewGame
-            case GameStatus.PENDING:
-                klass = PendingGame
-            case GameStatus.STARTED:
-                klass = StartedGame
-            case _:
-                raise NotImplementedError
-        return klass(uuid=uuid, board=board, events=events)
+        return cls(uuid=uuid, board=board, events=events)
 
 
-class NewGame(Game):
-    @singledispatchmethod
-    def execute(self, command: cmd.Command, /) -> Result:
-        return super().execute(command)
-
-    @execute.register
-    def create_game(self, _: cmd.CreateGame, /) -> Result:
-        self.append(evt.GameCreated(self.uuid))
-        return Ok({"uuid": self.uuid})
+def _unhandled_command(command: cmd.Command) -> Result:
+    logger.warning("Unhandled command %s", command)
+    return Err(f"Unhandled command {command}")
 
 
-class PendingGame(Game):
-    @singledispatchmethod
-    def execute(self, command: cmd.Command, /) -> Result:
-        return super().execute(command)
+@singledispatch
+def _new(command: cmd.Command, _: Game, /) -> Result:
+    return _unhandled_command(command)
 
-    @execute.register
-    def add_player(self, command: cmd.AddPlayer, /) -> Result:
-        player = Player(command.name)
-        if player in self.board.players:
-            return Err(f"Player `{player}` is already in game")
 
-        self.append(evt.PlayerAdded(command.name))
+@_new.register
+def create_game(_: cmd.CreateGame, game: Game, /) -> Result:
+    game.append(evt.GameCreated(game.uuid))
+    return Ok({"uuid": game.uuid})
+
+
+@singledispatch
+def _pending(command: cmd.Command, _: Game, /) -> Result:
+    return _unhandled_command(command)
+
+
+@_pending.register
+def add_player(command: cmd.AddPlayer, game: Game, /) -> Result:
+    player = Player(command.name)
+    if player in game.board.players:
+        return Err(f"Player `{player}` is already in game")
+
+    game.append(evt.PlayerAdded(command.name))
+    return Ok()
+
+
+@_pending.register
+def start_game(_: cmd.StartGame, game: Game, /) -> Result:
+    if not game.board.players:
+        return Err("You can't start a game without any player")
+    game.append(evt.GameStarted())
+    return Ok()
+
+
+@singledispatch
+def _started(command: cmd.Command, _: Game, /) -> Result:
+    return _unhandled_command(command)
+
+
+def _assert_its_player_turn(command: cmd.PlayerCommand, game: Game) -> Result:
+    player = game.board.get_player(command.player)
+    if player.is_playing(game.board):
         return Ok()
-
-    @execute.register
-    def start_game(self, _: cmd.StartGame, /) -> Result:
-        if not self.board.players:
-            return Err("You can't start a game without any player")
-        self.append(evt.GameStarted())
-        return Ok()
+    return Err(f"{command.player}, it's not your turn to play")
 
 
-class StartedGame(Game):
-    @singledispatchmethod
-    def execute(self, command: cmd.Command, /) -> Result:
-        return super().execute(command)
+@_started.register
+def roll_dice(command: cmd.RollDices, game: Game, /) -> Result:
+    return _assert_its_player_turn(command, game)
 
-    @execute.register
-    def roll_dice(self, cmd: cmd.RollDices, /) -> Result:
-        if self.board.round.player_turn.player.name != cmd.player:
-            return Err(f"{cmd.player}, it's not your turn to play")
-        return Ok()
 
-    @execute.register
-    def score(self, cmd: cmd.Score, /) -> Result:
-        if self.board.round.current_player.name != cmd.player:
-            return Err(f"{cmd.player}, it's not your turn to play")
-        category = Category(cmd.category)
-        combination = Combination(cmd.category)
-        score = combination.score(self.board.dices)
+@_started.register
+def score(command: cmd.Score, game: Game, /) -> Result:
+    its_player_turn = _assert_its_player_turn(command, game)
+    if its_player_turn.is_err():
+        return its_player_turn
 
-        self.append(evt.PointsScored(cmd.player, category.value, score))
-        next_round = self.board.round.next_round()
-        self.append(
-            evt.TurnChanged(
-                new_player=next_round.current_player.name,
-                round_number=next_round.number,
-            )
+    category = Category(command.category)
+    combination = Combination(command.category)
+    score = combination.score(game.board.dices)
+
+    game.append(evt.PointsScored(command.player, category.value, score))
+    next_round = game.board.round.next_round()
+    game.append(
+        evt.TurnChanged(
+            new_player=next_round.current_player.name,
+            round_number=next_round.number,
         )
-        return Ok()
+    )
+    return Ok()
+
+
+CommandHandler = Callable[[cmd.Command, Game], Result]
+
+_STATES: dict[GameStatus, CommandHandler] = {
+    GameStatus.NEW: _new,
+    GameStatus.PENDING: _pending,
+    GameStatus.STARTED: _started,
+}

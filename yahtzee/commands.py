@@ -1,6 +1,6 @@
 from abc import ABC
 from dataclasses import dataclass
-from typing import Any, Generic, NoReturn, TypeVar, overload
+from typing import Any, Generic, NoReturn, TypeAlias, TypeVar, overload
 from uuid import UUID
 
 T = TypeVar("T", covariant=True)  # success type
@@ -65,7 +65,7 @@ class Err(Generic[E]):
         return self._value
 
 
-Result = Ok[T] | Err[E]
+Result: TypeAlias = Ok[T] | Err[E]
 
 
 class Command(ABC):
@@ -93,11 +93,15 @@ class StartGame(GameCommand):
 
 
 @dataclass(frozen=True)
-class RollDices(GameCommand):
+class PlayerCommand(GameCommand):
     player: str
 
 
 @dataclass(frozen=True)
-class Score(GameCommand):
-    player: str
+class RollDices(PlayerCommand):
+    pass
+
+
+@dataclass(frozen=True)
+class Score(PlayerCommand):
     category: str

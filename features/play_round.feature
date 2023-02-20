@@ -7,7 +7,6 @@ Feature: play a round
 		And the game is started
 
 	Scenario: Alice can't play
-		Given the game is started
 		When Alice rolls the dices
 		Then an error said "Alice, it's not your turn to play"
 
