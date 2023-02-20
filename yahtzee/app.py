@@ -5,7 +5,7 @@ from uuid import UUID
 from .command_handlers import handle
 from .commands import Command, CreateGame, Err, GameCommand, Ok, Result
 from .events import ErrorRaised
-from .game import Game
+from .game.game import Game
 from .repository import InMemoryEventsStore, events, set_events_store
 from .views import GameViews
 

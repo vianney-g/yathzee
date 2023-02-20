@@ -1,8 +1,8 @@
 from behave import given, then
 
 from yahtzee.app import get_game
-from yahtzee.game import Player
-from yahtzee.score import Category, Score, Scorecard
+from yahtzee.game.game import Player
+from yahtzee.game.score import Category, Score, Scorecard
 
 
 @then("{player_name} score is equal to {score:d}")

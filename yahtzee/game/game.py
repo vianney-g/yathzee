@@ -4,9 +4,8 @@ from functools import singledispatchmethod
 from logging import getLogger
 from uuid import UUID, uuid4
 
-from yahtzee.dices import Dices
-
-from . import events as evt
+from .. import events as evt
+from .dices import Dices
 from .score import Category, Scorecard
 
 logger = getLogger(__name__)
