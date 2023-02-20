@@ -28,7 +28,7 @@ class Player:
         return {"name": self.name, "scorecard": self.scorecard.asdict()}
 
     def __bool__(self) -> bool:
-        return self is NOBODY_SENTINEL
+        return self is _NOBODY_SENTINEL
 
     def is_playing(self, board: "Board") -> bool:
         """Return True if it's player's turn"""
@@ -36,10 +36,10 @@ class Player:
 
     @classmethod
     def nobody(cls) -> "Player":
-        return NOBODY_SENTINEL
+        return _NOBODY_SENTINEL
 
 
-NOBODY_SENTINEL = Player("__NOBODY__")
+_NOBODY_SENTINEL = Player("__NOBODY__")
 
 
 Players = list[Player]
