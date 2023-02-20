@@ -2,6 +2,7 @@ from functools import singledispatch
 from logging import getLogger
 from uuid import UUID
 
+from .command_handlers import handle
 from .commands import Command, CreateGame, Err, GameCommand, Ok, Result
 from .events import ErrorRaised
 from .game import Game
@@ -47,7 +48,7 @@ def execute(command: Command, /) -> Result:
 @execute.register
 def create_game(command: CreateGame, /) -> Result:
     game = Game.new()
-    result = game.execute(command)
+    result = handle(game, command)
     commit(result, game)
     return result
 
@@ -55,6 +56,6 @@ def create_game(command: CreateGame, /) -> Result:
 @execute.register
 def game_command(command: GameCommand, /) -> Result:
     game = get_game(command.game)
-    result = game.execute(command)
+    result = handle(game, command)
     commit(result, game)
     return result
