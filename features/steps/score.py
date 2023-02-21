@@ -1,7 +1,7 @@
 from behave import given, then
 
 from yahtzee.app import get_game
-from yahtzee.game.game import Player
+from yahtzee.game.board import Player
 from yahtzee.game.score import Category, Score, Scorecard
 
 

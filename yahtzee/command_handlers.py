@@ -5,8 +5,8 @@ from functools import singledispatch
 from . import commands as cmd
 from .commands import Err, Ok, Result
 from .game import events as evt
+from .game.board import Game, GameStatus, Player
 from .game.dices import Combination
-from .game.game import Game, GameStatus, Player
 from .game.score import Category
 
 logger = logging.getLogger(__name__)

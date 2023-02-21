@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from .game.game import Game
+from .game.board import Game
 from .repository import EventsStore
 
 
