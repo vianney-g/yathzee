@@ -1,9 +1,8 @@
-from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from functools import singledispatchmethod
 from logging import getLogger
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from . import events as evt
 from .dices import Dices
@@ -143,28 +142,3 @@ class Board:
         player = self.get_player(event.new_player)
         self.round = Round.from_players(self.players, event.round_number, player)
         self.inc_version()
-
-
-@dataclass
-class Game:
-    uuid: UUID
-    board: Board
-    events: list[evt.Event]
-    new_events: list[evt.Event] = field(default_factory=list)
-
-    def append(self, event: evt.Event) -> None:
-        self.board.apply(event)
-        self.new_events.append(event)
-
-    @classmethod
-    def new(cls) -> "Game":
-        new_uuid = uuid4()
-        return Game.from_events(new_uuid, [])
-
-    @classmethod
-    def from_events(cls, uuid: UUID, events: Iterable[evt.Event]) -> "Game":
-        board = Board.new()
-        events = list(events)
-        for event in events:
-            board.apply(event)
-        return cls(uuid=uuid, board=board, events=events)
