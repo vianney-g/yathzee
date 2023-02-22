@@ -1,8 +1,4 @@
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from .board import Board
 
 from .score import Scorecard
 
@@ -24,10 +20,6 @@ class Player:
 
     def __bool__(self) -> bool:
         return self is _NOBODY_SENTINEL
-
-    def is_playing(self, board: "Board") -> bool:
-        """Return True if it's player's turn"""
-        return self is board.round.current_player
 
     @classmethod
     def nobody(cls) -> "Player":

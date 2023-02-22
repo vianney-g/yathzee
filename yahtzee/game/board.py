@@ -125,6 +125,10 @@ class Board:
     def get_player(self, player_name: str) -> Player:
         return next(player for player in self.players if player.name == player_name)
 
+    @property
+    def playing_player(self) -> Player:
+        return self.round.current_player
+
     @apply.register
     def game_started(self, _: evt.GameStarted, /):
         self.status = GameStatus.STARTED
