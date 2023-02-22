@@ -78,6 +78,11 @@ def roll_dice(command: cmd.RollDices, game: Game, /) -> Result:
 @_assert_player_turn
 def score(command: cmd.Score, game: Game, /) -> Result:
     category = Category(command.category)
+    player = game.board.get_player(command.player)
+
+    if not player.can_score(category):
+        return Err(f"{player.name}, you already scored {category.value}")
+
     combination = Combination(command.category)
     score = combination.score(game.board.dices)
 

@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
 
-from .score import Scorecard
+from .score import Category, Scorecard
 
 
 @dataclass(frozen=True)
@@ -20,6 +20,9 @@ class Player:
 
     def __bool__(self) -> bool:
         return self is _NOBODY_SENTINEL
+
+    def can_score(self, category: Category) -> bool:
+        return not self.scorecard.is_scored(category)
 
     @classmethod
     def nobody(cls) -> "Player":

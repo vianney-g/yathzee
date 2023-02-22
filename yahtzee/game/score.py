@@ -57,6 +57,9 @@ class ScoreLine:
 class Scorecard:
     lines: dict[Category, ScoreLine] = dataclasses.field(default_factory=dict)
 
+    def is_scored(self, category: Category):
+        return self.lines[category].is_scored
+
     def __post_init__(self):
         for category in Category:
             self.lines[category] = ScoreLine(category)

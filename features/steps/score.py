@@ -1,15 +1,9 @@
 from behave import given, then
 
-from yahtzee.app import get_game
+from yahtzee.app import commit, get_game
+from yahtzee.game import events
 from yahtzee.game.board import Player
 from yahtzee.game.score import Category, Score, Scorecard
-
-
-@then("{player_name} score is equal to {score:d}")
-def assert_score(context, player_name: str, score: int):
-    game = get_game(context.game_uuid)
-    player: Player = next(p for p in game.board.players if p.name == player_name)
-    assert player.score == score, f"Unexpected score {score}"
 
 
 @given("the following scorecard")
@@ -20,6 +14,21 @@ def create_scorecard(context):
         score = Score(row["score"])
         scorecard[category] = score
     context.scorecard = scorecard
+
+
+@given("{player_name} scored {points:d} for {category}")
+def player_scored(context, player_name: str, points: int, category: str):
+    game = get_game(context.game_uuid)
+    scored = events.PointsScored(player_name, category, points)
+    game.append(scored)
+    commit(game)
+
+
+@then("{player_name} score is equal to {score:d}")
+def assert_score(context, player_name: str, score: int):
+    game = get_game(context.game_uuid)
+    player: Player = game.board.get_player(player_name)
+    assert player.score == score, f"Unexpected score {score}"
 
 
 @then("the total of scorecard is {expected_score:d}")
