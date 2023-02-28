@@ -68,14 +68,30 @@ def _assert_player_turn(handler):
     return _wrapped
 
 
+def _assert_all_dices_are_on_the_table(handler):
+    @wraps(handler)
+    def _wrapped(command: cmd.Command, game: Game, /) -> Result:
+        if not game.board.dices.all_on_the_table:
+            return Err("You must roll the dices first")
+        return handler(command, game)
+
+    return _wrapped
+
+
 @_started.register
 @_assert_player_turn
 def roll_dice(command: cmd.RollDices, game: Game, /) -> Result:
+    dices = game.board.dices.roll()
+    for dice in dices.all:
+        game.append(
+            evt.DicePositionChanged(dice.number.value, dice.position.value, dice.points)
+        )
     return Ok()
 
 
 @_started.register
 @_assert_player_turn
+@_assert_all_dices_are_on_the_table
 def score(command: cmd.Score, game: Game, /) -> Result:
     category = Category(command.category)
     player = game.board.get_player(command.player)
@@ -87,6 +103,7 @@ def score(command: cmd.Score, game: Game, /) -> Result:
     score = combination.score(game.board.dices)
 
     game.append(evt.PointsScored(command.player, category.value, score))
+
     next_round = game.board.round.next_round()
     game.append(
         evt.TurnChanged(

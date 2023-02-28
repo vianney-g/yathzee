@@ -21,3 +21,7 @@ Feature: play a round
 		When Bob rolls the dices
 		And Bob scores the Aces line
 		Then an error said "Bob, you already scored Aces"
+
+	Scenario: Bob cannot score if he didn't roll the dices
+		When Bob scores the Chance line
+		Then an error said "You must roll the dices first"

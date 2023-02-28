@@ -5,7 +5,7 @@ from logging import getLogger
 from uuid import UUID
 
 from . import events as evt
-from .dices import Dices
+from .dices import Dice, Dices
 from .players import Player, Players
 from .score import Category
 
@@ -103,7 +103,7 @@ class Board:
             players=[],
             status=GameStatus.NEW,
             round=Round.zero(),
-            dices=Dices.roll(),
+            dices=Dices.new_cup(),
             game_id=UUID(int=0),
             version=0,
         )
@@ -139,6 +139,12 @@ class Board:
     def points_scored(self, event: evt.PointsScored):
         player = self.get_player(event.player)
         player.scorecard[Category(event.category)] = event.points
+        self.inc_version()
+
+    @apply.register
+    def dice_changed(self, event: evt.DicePositionChanged):
+        dice = Dice.from_literal(event.number, event.value, event.position)
+        self.dices = self.dices.update(dice)
         self.inc_version()
 
     @apply.register
