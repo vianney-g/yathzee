@@ -22,7 +22,7 @@ optional = true
 [tool.poetry.group.dev.dependencies]
 black = "^22.10.0"
 pylint = "^2.15.5"
-mypy = "^0.990"
+mypy = "^1.0.1"
 pre-commit = "^2.21.0"
 
 [build-system]
