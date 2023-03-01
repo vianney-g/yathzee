@@ -1,6 +1,7 @@
 import logging
 from collections.abc import Callable
 from functools import singledispatch, wraps
+from typing import Any
 
 from . import commands as cmd
 from .commands import Err, Ok, Result
@@ -57,30 +58,36 @@ def _started(command: cmd.Command, _: Game, /) -> Result:
     return _unhandled_command(command)
 
 
-def _assert_player_turn(handler):
-    @wraps(handler)
-    def _wrapped(command: cmd.PlayerCommand, game: Game, /) -> Result:
-        player = game.board.get_player(command.player)
-        if player is not game.board.playing_player:
-            return Err(f"{command.player}, it's not your turn to play")
-        return handler(command, game)
-
-    return _wrapped
+Handler = Callable[[Any, Game], Result]
 
 
-def _assert_all_dices_are_on_the_table(handler):
-    @wraps(handler)
-    def _wrapped(command: cmd.Command, game: Game, /) -> Result:
-        if not game.board.dices.all_on_the_table:
-            return Err("You must roll the dices first")
-        return handler(command, game)
+def _validator(validator: Handler) -> Callable[[Handler], Handler]:
+    def wrap(handler: Handler) -> Handler:
+        @wraps(handler)
+        def _wrapped(command, game, /) -> Result:
+            validation = validator(command, game)
+            match validation:
+                case Ok():
+                    return handler(command, game)
+                case Err():
+                    return validation
 
-    return _wrapped
+        return _wrapped
+
+    return wrap
+
+
+@_validator
+def _player_can_play(command: cmd.PlayerCommand, game, /) -> Result:
+    player = game.board.get_player(command.player)
+    if player is not game.board.playing_player:
+        return Err(f"{command.player}, it's not your turn to play")
+    return Ok()
 
 
 @_started.register
-@_assert_player_turn
-def roll_dice(command: cmd.RollDices, game: Game, /) -> Result:
+@_player_can_play
+def roll_dice(_: cmd.RollDices, game: Game, /) -> Result:
     dices = game.board.dices.roll()
     for dice in dices.all:
         game.append(
@@ -90,15 +97,15 @@ def roll_dice(command: cmd.RollDices, game: Game, /) -> Result:
 
 
 @_started.register
-@_assert_player_turn
-@_assert_all_dices_are_on_the_table
+@_player_can_play
 def score(command: cmd.Score, game: Game, /) -> Result:
-    category = Category(command.category)
+    if not game.board.dices.all_on_the_table:
+        return Err("You must roll the dices first")
+
     player = game.board.get_player(command.player)
-
-    if not player.can_score(category):
-        return Err(f"{player.name}, you already scored {category.value}")
-
+    if not player.can_score(Category(command.category)):
+        return Err(f"{command.player}, you already scored {command.category}")
+    category = Category(command.category)
     combination = Combination(command.category)
     score = combination.score(game.board.dices)
 
