@@ -1,6 +1,8 @@
+from typing import Literal
 from uuid import UUID
 
 from .game import Game
+from .game.dices import DiceNumber
 from .repository import EventsStore
 
 
@@ -26,3 +28,10 @@ class GameViews:
     @property
     def players(self) -> list[dict]:
         return [p.asdict() for p in self._game.board.players]
+
+    @property
+    def dices(self) -> list[dict]:
+        return [d.asdict() for d in self._game.board.dices.all]
+
+    def dice(self, dice_number: Literal[1, 2, 3, 4, 5]) -> dict:
+        return self._game.board.dices.get(DiceNumber(dice_number)).asdict()

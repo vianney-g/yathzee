@@ -4,12 +4,12 @@ from functools import singledispatch, wraps
 from typing import Any
 
 from . import commands as cmd
-from .commands import Err, Ok, Result
 from .game import Game
 from .game import events as evt
 from .game.board import GameStatus, Player
-from .game.dices import Combination
+from .game.dices import Combination, DiceNumber, DicePosition
 from .game.score import Category
+from .result import Err, Ok, Result
 
 logger = logging.getLogger(__name__)
 
@@ -117,6 +117,18 @@ def score(command: cmd.Score, game: Game, /) -> Result:
         evt.TurnChanged(
             new_player=next_round.current_player.name,
             round_number=next_round.number,
+        )
+    )
+    return Ok()
+
+
+@_started.register
+@_player_can_play
+def keep_dice(command: cmd.KeepDice, game: Game, /) -> Result:
+    dice = game.board.dices.get(DiceNumber(command.dice))
+    game.append(
+        evt.DicePositionChanged(
+            dice.number.value, DicePosition.ASIDE.value, dice.points
         )
     )
     return Ok()

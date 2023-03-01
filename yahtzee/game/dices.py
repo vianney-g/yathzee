@@ -85,6 +85,13 @@ class Dice:
             self.number, DiceValue.random(), DicePosition.ON_THE_TRACK
         )
 
+    def asdict(self) -> dict:
+        return {
+            "number": self.number.value,
+            "value": self.value.value,
+            "position": self.position.value,
+        }
+
 
 DicesSet = list[Dice]
 
@@ -223,6 +230,9 @@ class Dices:
     @property
     def all_on_the_table(self) -> bool:
         return all(dice.is_on_the_table for dice in self.all)
+
+    def get(self, number: DiceNumber) -> Dice:
+        return next(dice for dice in self.all if dice.number == number)
 
     @property
     def all(self) -> Iterator[Dice]:

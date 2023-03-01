@@ -25,3 +25,11 @@ Feature: play a round
 	Scenario: Bob cannot score if he didn't roll the dices
 		When Bob scores the Chance line
 		Then an error said "You must roll the dices first"
+
+	@wip
+	Scenario: Bob can keep some dices aside before rerolling
+		When Bob rolls the dices
+		And Bob keeps the dices 1, 2 and 3
+		And Bob rerolls the dices
+		Then dices 1, 2 and 3 have the same value as before
+		And dices 4 and 5 are on the track
