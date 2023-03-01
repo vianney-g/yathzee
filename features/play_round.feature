@@ -26,7 +26,6 @@ Feature: play a round
 		When Bob scores the Chance line
 		Then an error said "You must roll the dices first"
 
-	@wip
 	Scenario: Bob can keep some dices aside before rerolling
 		When Bob rolls the dices
 		And Bob keeps the dices 1, 2 and 3
