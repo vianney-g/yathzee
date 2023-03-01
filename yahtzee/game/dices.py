@@ -1,8 +1,8 @@
 """Dices and combinations"""
 import dataclasses
-from collections.abc import Iterable, Iterator
+from collections import Counter
+from collections.abc import Callable, Iterator
 from enum import Enum, IntEnum
-from itertools import groupby
 from random import choice
 from typing import Literal
 
@@ -85,10 +85,6 @@ class Dice:
             self.number, DiceValue.random(), DicePosition.ON_THE_TRACK
         )
 
-    @staticmethod
-    def sum(dices: Iterable["Dice"]) -> int:
-        return sum(dice.value for dice in dices)
-
 
 DicesSet = list[Dice]
 
@@ -110,39 +106,103 @@ class Combination(Enum):
     YAHTZEE = "Yahtzee"
     CHANCE = "Chance"
 
-    def score(self, dices: "Dices") -> Score:
-        """Give the score for the combination according to a set of dices"""
-        score: Score
-        match self:
-            case Combination.ACES:
-                score = Dice.sum(dices.aces)
-            case Combination.TWOS:
-                score = Dice.sum(dices.twos)
-            case Combination.THREES:
-                score = Dice.sum(dices.threes)
-            case Combination.FOURS:
-                score = Dice.sum(dices.fours)
-            case Combination.FIVES:
-                score = Dice.sum(dices.fives)
-            case Combination.SIXES:
-                score = Dice.sum(dices.sixes)
-            case Combination.THREE_OF_A_KIND:
-                score = Dice.sum(dices.visibles) if dices.is_three_of_a_kind else 0
-            case Combination.FOUR_OF_A_KIND:
-                score = Dice.sum(dices.visibles) if dices.is_four_of_a_kind else 0
-            case Combination.FULL_HOUSE:
-                score = 25 if dices.is_full_house else 0
-            case Combination.SMALL_STRAIGHT:
-                score = 20 if dices.is_small_straight else 0
-            case Combination.LARGE_STRAIGHT:
-                score = 40 if dices.is_large_straight else 0
-            case Combination.YAHTZEE:
-                score = 50 if dices.is_yathzee else 0
-            case Combination.CHANCE:
-                score = Dice.sum(dices.visibles)
-            case _:
-                score = 0
-        return score
+    def score(self, dices: list[DiceValue]) -> Score:
+        """Return the score for the given combination"""
+        return _COMBINATION_SCORES[self](dices)
+
+
+def _sum_of(value: DiceValue) -> Callable[[list[DiceValue]], int]:
+    """Return a function that sums the dices of a given value"""
+
+    def _binded_sum(dices: list[DiceValue]) -> int:
+        return sum(dice for dice in dices if dice == value)
+
+    return _binded_sum
+
+
+def is_three_of_a_kind(dices: list[DiceValue]) -> bool:
+    """Check if the dices are three of a kind"""
+    count_by_value = Counter(dices)
+    return max(count_by_value.values()) >= 3
+
+
+def is_four_of_a_kind(dices: list[DiceValue]) -> bool:
+    """Check if the dices are four of a kind"""
+    count_by_value = Counter(dices)
+    return max(count_by_value.values()) >= 4
+
+
+def is_full_house(dices: list[DiceValue]) -> bool:
+    """Check if the dices are a full house"""
+    count_by_value = Counter(dices)
+    dices_set = set(dices)
+    if len(dices_set) == 1:
+        return True
+    if len(dices_set) == 2 and max(count_by_value.values()) == 3:
+        return True
+    return False
+
+
+def is_large_straight(dices: list[DiceValue]) -> bool:
+    """Check if the dices are a large straight"""
+    dices_set = set(dices)
+    return any(straight.issubset(dices_set) for straight in LARGE_STRAIGHTS)
+
+
+def is_small_straight(dices: list[DiceValue]) -> bool:
+    """Check if the dices are a small straight"""
+    dices_set = set(dices)
+    return any(straight.issubset(dices_set) for straight in SMALL_STRAIGHTS)
+
+
+def three_of_a_kind_score(dices: list[DiceValue]) -> int:
+    """Return the score for three of a kind"""
+    return sum(dices) if is_three_of_a_kind(dices) else 0
+
+
+def four_of_a_kind_score(dices: list[DiceValue]) -> int:
+    """Return the score for four of a kind"""
+    return sum(dices) if is_four_of_a_kind(dices) else 0
+
+
+def small_straight_score(dices: list[DiceValue]) -> int:
+    """Return the score for a small straight"""
+    return 20 if is_small_straight(dices) else 0
+
+
+def large_straight_score(dices: list[DiceValue]) -> int:
+    """Return the score for a large straight"""
+    return 40 if is_large_straight(dices) else 0
+
+
+def full_house_score(dices: list[DiceValue]) -> int:
+    """Return the score for a full house"""
+    return 25 if is_full_house(dices) else 0
+
+
+def yahtzee_score(dices: list[DiceValue]) -> int:
+    """Return the score for a yahtzee"""
+    return 50 if len(set(dices)) == 1 else 0
+
+
+SMALL_STRAIGHTS = ({1, 2, 3, 4}, {2, 3, 4, 5}, {3, 4, 5, 6})
+LARGE_STRAIGHTS = ({1, 2, 3, 4, 5}, {2, 3, 4, 5, 6})
+
+_COMBINATION_SCORES: dict[Combination, Callable[[list[DiceValue]], int]] = {
+    Combination.ACES: _sum_of(DiceValue.ONE),
+    Combination.TWOS: _sum_of(DiceValue.TWO),
+    Combination.THREES: _sum_of(DiceValue.THREE),
+    Combination.FOURS: _sum_of(DiceValue.FOUR),
+    Combination.FIVES: _sum_of(DiceValue.FIVE),
+    Combination.SIXES: _sum_of(DiceValue.SIX),
+    Combination.THREE_OF_A_KIND: three_of_a_kind_score,
+    Combination.FOUR_OF_A_KIND: four_of_a_kind_score,
+    Combination.FULL_HOUSE: full_house_score,
+    Combination.SMALL_STRAIGHT: small_straight_score,
+    Combination.LARGE_STRAIGHT: large_straight_score,
+    Combination.YAHTZEE: yahtzee_score,
+    Combination.CHANCE: sum,
+}
 
 
 @dataclasses.dataclass(frozen=True)
@@ -178,104 +238,11 @@ class Dices:
 
     @property
     def visibles(self) -> Iterator[Dice]:
-        yield from (dice for dice in self.all if dice.is_on_the_table)
+        return (dice for dice in self.all if dice.is_on_the_table)
 
     @property
-    def values(self) -> list[DiceValue]:
-        return [dice.value for dice in self.visibles]
+    def values(self) -> Iterator[DiceValue]:
+        return (dice.value for dice in self.visibles)
 
-    def _visible_dices_of_value(self, value: DiceValue) -> Iterator[Dice]:
-        return (dice for dice in self.visibles if dice.value == value)
-
-    @property
-    def aces(self) -> Iterator[Dice]:
-        """ """
-        return self._visible_dices_of_value(DiceValue.ONE)
-
-    @property
-    def twos(self) -> Iterator[Dice]:
-        """ """
-        return self._visible_dices_of_value(DiceValue.TWO)
-
-    @property
-    def threes(self) -> Iterator[Dice]:
-        """ """
-        return self._visible_dices_of_value(DiceValue.THREE)
-
-    @property
-    def fours(self) -> Iterator[Dice]:
-        """ """
-        return self._visible_dices_of_value(DiceValue.FOUR)
-
-    @property
-    def fives(self) -> Iterator[Dice]:
-        """ """
-        return self._visible_dices_of_value(DiceValue.FIVE)
-
-    @property
-    def sixes(self) -> Iterator[Dice]:
-        """ """
-        return self._visible_dices_of_value(DiceValue.SIX)
-
-    @property
-    def _visible_dices_groups_by_value(self) -> list[DicesSet]:
-        sorted_dices = sorted(self.visibles)
-        return [
-            DicesSet(dices)
-            for _, dices in groupby(sorted_dices, key=lambda dice: dice.value)
-        ]
-
-    @property
-    def is_four_of_a_kind(self) -> bool:
-        """A group of four dices with same value is in the set"""
-        for dices in self._visible_dices_groups_by_value:
-            if len(dices) >= 4:
-                return True
-        return False
-
-    @property
-    def is_three_of_a_kind(self) -> bool:
-        """A group of three dices with same value is in the set"""
-        for dices in self._visible_dices_groups_by_value:
-            if len(dices) >= 3:
-                return True
-        return False
-
-    @property
-    def is_full_house(self) -> bool:
-        """Dices can be grouped 3 of a value + 2 of a value"""
-        groups = self._visible_dices_groups_by_value
-        if len(groups) == 1:
-            return True
-        if len(groups) == 2:
-            return len(groups[0]) in (2, 3)
-        return False
-
-    @property
-    def is_large_straight(self) -> bool:
-        """Five dices with incremental value"""
-        valid_straights = [
-            {1, 2, 3, 4, 5},
-            {2, 3, 4, 5, 6},
-        ]
-        return set(self.values) in valid_straights
-
-    @property
-    def is_small_straight(self) -> bool:
-        """Four dices with incremental value"""
-        valid_straights = [
-            {1, 2, 3, 4},
-            {2, 3, 4, 5},
-            {3, 4, 5, 6},
-        ]
-
-        uniq_dices = set(self.values)
-        for straight in valid_straights:
-            if straight.issubset(uniq_dices):
-                return True
-        return False
-
-    @property
-    def is_yathzee(self) -> bool:
-        """Five dices of same value"""
-        return len(set(self.values)) == 1
+    def score(self, combination: Combination) -> int:
+        return combination.score(list(self.values))

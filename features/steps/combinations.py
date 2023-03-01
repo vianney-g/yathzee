@@ -16,7 +16,7 @@ def rolled_dices(context, d1: int, d2: int, d3: int, d4: int, d5: int):
 @then("the {combination} score is {expected_score:d}")
 def combination_score(context, combination: str, expected_score: int):
     dices: Dices = context.dices
-    actual_score = Combination(combination).score(dices)
+    actual_score = dices.score(Combination(combination))
     assert (
         expected_score == actual_score
     ), f"Expected score {expected_score}, found {actual_score}"

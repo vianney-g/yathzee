@@ -104,4 +104,4 @@ class RollDices(PlayerCommand):
 
 @dataclass(frozen=True)
 class Score(PlayerCommand):
-    category: str
+    combination: str

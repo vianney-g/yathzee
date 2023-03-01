@@ -98,15 +98,17 @@ def roll_dice(_: cmd.RollDices, game: Game, /) -> Result:
 @_started.register
 @_player_can_play
 def score(command: cmd.Score, game: Game, /) -> Result:
-    if not game.board.dices.all_on_the_table:
+    dices = game.board.dices
+    if not dices.all_on_the_table:
         return Err("You must roll the dices first")
 
     player = game.board.get_player(command.player)
-    if not player.can_score(Category(command.category)):
-        return Err(f"{command.player}, you already scored {command.category}")
-    category = Category(command.category)
-    combination = Combination(command.category)
-    score = combination.score(game.board.dices)
+    category = Category(command.combination)
+    if not player.can_score(category):
+        return Err(f"{command.player}, you already scored {category.value}")
+
+    combination = Combination(command.combination)
+    score = dices.score(combination)
 
     game.append(evt.PointsScored(command.player, category.value, score))
 
