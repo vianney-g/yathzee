@@ -32,3 +32,16 @@ Feature: play a round
 		And Bob rerolls the dices
 		Then dices 1, 2 and 3 have the same value as before
 		And dices 4 and 5 are on the track
+
+	Scenario: Bob can roll dices 3 times
+		When Bob rolls the dices
+		And Bob rerolls the dices
+		And Bob rerolls the dices
+		Then there was no error
+
+	Scenario: Bob can not roll dices more than 3 times
+		When Bob rolls the dices
+		And Bob rerolls the dices
+		And Bob rerolls the dices
+		And Bob rerolls the dices
+		Then an error said "You already rolled the dices 3 times"

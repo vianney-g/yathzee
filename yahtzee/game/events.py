@@ -37,6 +37,11 @@ class TurnChanged(Event):
 
 
 @dataclass
+class RollPerformed(Event):
+    attempt_nb: int
+
+
+@dataclass
 class DicePositionChanged(Event):
     number: Literal[1, 2, 3, 4, 5]
     position: Literal["on_the_track", "in_the_cup", "aside"]

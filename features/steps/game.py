@@ -51,6 +51,14 @@ def error_raised(context, error_msg: str):
         assert False, f"Expected error `{error_msg}` did not raised"
 
 
+@then("there was no error")
+def no_error(context):
+    logs = views(context.game_uuid).logs
+    for event in list(logs):
+        if isinstance(event, ErrorRaised):
+            assert False, f"Unexpected error `{event.msg}` raised"
+
+
 @then("{player_name} score is positive")
 def score_is_positive(context, player_name: str):
     player = views(context.game_uuid).player(player_name)

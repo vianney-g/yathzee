@@ -20,15 +20,22 @@ class PlayerTurn:
     player: Player
     attempted_rolls: int = 0
 
-    def roll(self):
-        raise NotImplementedError
-
     def __bool__(self) -> bool:
         return bool(self.player)
 
     @classmethod
     def end_of_round(cls):
         return cls(Player.nobody())
+
+    @property
+    def next_attempt(self) -> "PlayerTurn":
+        if self.can_reroll:
+            return self.__class__(self.player, self.attempted_rolls + 1)
+        return self
+
+    @property
+    def can_reroll(self) -> bool:
+        return self.attempted_rolls < 3
 
 
 @dataclass(frozen=True)
@@ -64,6 +71,14 @@ class Round:
             player_turn = PlayerTurn(next_player)
             round = self.__class__(self.number, player_turn, self._players)
         return round
+
+    def next_attempt(self) -> "Round":
+        return self.__class__(self.number, self.player_turn.next_attempt, self._players)
+
+    def with_attempt(self, attempt_nb: int) -> "Round":
+        return self.__class__(
+            self.number, PlayerTurn(self.current_player, attempt_nb), self._players
+        )
 
     @property
     def is_ended(self) -> bool:
@@ -151,4 +166,9 @@ class Board:
     def turn_changed(self, event: evt.TurnChanged):
         player = self.get_player(event.new_player)
         self.round = Round.from_players(self.players, event.round_number, player)
+        self.inc_version()
+
+    @apply.register
+    def roll_performed(self, event: evt.RollPerformed):
+        self.round = self.round.with_attempt(event.attempt_nb)
         self.inc_version()

@@ -87,7 +87,11 @@ def _player_can_play(command: cmd.PlayerCommand, game, /) -> Result:
 @_started.register
 @_player_can_play
 def roll_dice(_: cmd.RollDices, game: Game, /) -> Result:
+    if not game.board.round.player_turn.can_reroll:
+        return Err("You already rolled the dices 3 times")
     dices = game.board.dices.roll()
+    round = game.board.round.next_attempt()
+    game.append(evt.RollPerformed(round.player_turn.attempted_rolls))
     for dice in dices.all:
         game.append(
             evt.DicePositionChanged(dice.number.value, dice.position.value, dice.points)
