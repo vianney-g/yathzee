@@ -13,6 +13,8 @@ from .game.score import Category
 
 logger = logging.getLogger(__name__)
 
+Handler = Callable[[Any, Game], Result]
+
 
 def _unhandled_command(command: cmd.Command) -> Result:
     logger.warning("Unhandled command %s", command)
@@ -56,9 +58,6 @@ def start_game(_: cmd.StartGame, game: Game, /) -> Result:
 @singledispatch
 def _started(command: cmd.Command, _: Game, /) -> Result:
     return _unhandled_command(command)
-
-
-Handler = Callable[[Any, Game], Result]
 
 
 def _validator(validator: Handler) -> Callable[[Handler], Handler]:
