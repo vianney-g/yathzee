@@ -34,6 +34,10 @@ class Category(Enum):
             Category.UPPER_SECTION_BONUS,
         }
 
+    @property
+    def is_bonus(self) -> bool:
+        return self in (Category.YAHTZEE_BONUS, Category.UPPER_SECTION_BONUS)
+
 
 @dataclasses.dataclass(frozen=True)
 class ScoreLine:
@@ -51,6 +55,10 @@ class ScoreLine:
     @property
     def is_scored(self) -> bool:
         return self.score is not None
+
+    @property
+    def is_bonus(self) -> bool:
+        return self.category.is_bonus
 
 
 @dataclasses.dataclass(frozen=True)
@@ -93,7 +101,7 @@ class Scorecard:
 
     @property
     def is_complete(self) -> bool:
-        return all(line.is_scored for line in self)
+        return all(line.is_scored for line in self if not line.is_bonus)
 
     def asdict(self) -> dict[str, int | None]:
         categories = {line.category.value: line.score for line in self}

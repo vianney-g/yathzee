@@ -19,7 +19,7 @@ def create_scorecard(context):
 @given("{player_name} scored {points:d} for {category}")
 def player_scored(context, player_name: str, points: int, category: str):
     game = get_game(context.game_uuid)
-    scored = events.PointsScored(player_name, category, points)
+    scored = events.PointsScored(game.uuid, player_name, category, points)
     game.append(scored)
     commit(game)
 

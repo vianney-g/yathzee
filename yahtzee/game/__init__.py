@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from uuid import UUID, uuid4
 
 from .board import Board
-from .events import Event
+from .events import Event, event_bus
 
 
 @dataclass
@@ -16,6 +16,7 @@ class Game:
     def append(self, event: Event) -> None:
         self.board.apply(event)
         self.new_events.append(event)
+        event_bus.push(event)
 
     @classmethod
     def new(cls) -> "Game":

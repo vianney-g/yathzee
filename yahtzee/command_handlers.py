@@ -6,7 +6,7 @@ from typing import Any
 from . import commands as cmd
 from .game import Game
 from .game import events as evt
-from .game.board import GameStatus, Player
+from .game.board import GameOver, GameStatus, Player, Round
 from .game.dices import Combination, DiceNumber, DicePosition
 from .game.score import Category
 from .result import Err, Ok, Result
@@ -43,7 +43,7 @@ def add_player(command: cmd.AddPlayer, game: Game, /) -> Result:
     if player in game.board.players:
         return Err(f"Player `{player}` is already in game")
 
-    game.append(evt.PlayerAdded(command.name))
+    game.append(evt.PlayerAdded(game.uuid, command.name))
     return Ok()
 
 
@@ -51,7 +51,7 @@ def add_player(command: cmd.AddPlayer, game: Game, /) -> Result:
 def start_game(_: cmd.StartGame, game: Game, /) -> Result:
     if not game.board.players:
         return Err("You can't start a game without any player")
-    game.append(evt.GameStarted())
+    game.append(evt.GameStarted(game.uuid))
     return Ok()
 
 
@@ -91,10 +91,12 @@ def roll_dice(_: cmd.RollDices, game: Game, /) -> Result:
         return Err("You already rolled the dices 3 times")
     dices = game.board.dices.roll()
     round = game.board.round.next_attempt()
-    game.append(evt.RollPerformed(round.player_turn.attempted_rolls))
+    game.append(evt.RollPerformed(game.uuid, round.player_turn.attempted_rolls))
     for dice in dices.all:
         game.append(
-            evt.DicePositionChanged(dice.number.value, dice.position.value, dice.points)
+            evt.DicePositionChanged(
+                game.uuid, dice.number.value, dice.position.value, dice.points
+            )
         )
     return Ok()
 
@@ -114,15 +116,19 @@ def score(command: cmd.Score, game: Game, /) -> Result:
     combination = Combination(command.combination)
     score = dices.score(combination)
 
-    game.append(evt.PointsScored(command.player, category.value, score))
+    game.append(evt.PointsScored(game.uuid, command.player, category.value, score))
 
-    next_round = game.board.round.next_round()
-    game.append(
-        evt.TurnChanged(
-            new_player=next_round.current_player.name,
-            round_number=next_round.number,
-        )
-    )
+    match game.board.round.next_round():
+        case Round() as next_round:
+            event = evt.TurnChanged(
+                game.uuid,
+                new_player=next_round.current_player.name,
+                round_number=next_round.number,
+            )
+        case GameOver():
+            event = evt.GameEnded(game.uuid)
+
+    game.append(event)
     return Ok()
 
 
@@ -132,7 +138,7 @@ def keep_dice(command: cmd.KeepDice, game: Game, /) -> Result:
     dice = game.board.dices.get(DiceNumber(command.dice))
     game.append(
         evt.DicePositionChanged(
-            dice.number.value, DicePosition.ASIDE.value, dice.points
+            game.uuid, dice.number.value, DicePosition.ASIDE.value, dice.points
         )
     )
     return Ok()

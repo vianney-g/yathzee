@@ -45,3 +45,7 @@ Feature: play a round
 		And Bob rerolls the dices
 		And Bob rerolls the dices
 		Then an error said "You already rolled the dices 3 times"
+
+	Scenario: Alice played the last round and the game is over
+		When the last round is played
+		Then the game is over

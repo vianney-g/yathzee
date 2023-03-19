@@ -34,6 +34,11 @@ class PlayerCommand(GameCommand):
 
 
 @dataclass(frozen=True)
+class EndGame(GameCommand):
+    pass
+
+
+@dataclass(frozen=True)
 class RollDices(PlayerCommand):
     pass
 

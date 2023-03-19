@@ -15,6 +15,10 @@ class Player:
     def score(self) -> int:
         return self.scorecard.score
 
+    @property
+    def has_all_categories_scored(self) -> bool:
+        return self.scorecard.is_complete
+
     def asdict(self) -> dict:
         return {"name": self.name, "scorecard": self.scorecard.asdict()}
 

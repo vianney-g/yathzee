@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from enum import Enum
 from functools import singledispatchmethod
 from logging import getLogger
+from typing import Union
 from uuid import UUID
 
 from . import events as evt
@@ -10,9 +11,6 @@ from .players import Player, Players
 from .score import Category
 
 logger = getLogger(__name__)
-
-
-RoundNumber = int
 
 
 @dataclass(frozen=True)
@@ -24,7 +22,7 @@ class PlayerTurn:
         return bool(self.player)
 
     @classmethod
-    def end_of_round(cls):
+    def null(cls) -> "PlayerTurn":
         return cls(Player.nobody())
 
     @property
@@ -36,6 +34,20 @@ class PlayerTurn:
     @property
     def can_reroll(self) -> bool:
         return self.attempted_rolls < 3
+
+
+RoundNumber = int
+
+
+class GameOver:
+    current_player = Player.nobody()
+    player_turn = PlayerTurn(current_player)
+
+    def next_attempt(self) -> "GameOver":
+        return self
+
+    def next_round(self) -> "GameOver":
+        return self
 
 
 @dataclass(frozen=True)
@@ -54,23 +66,31 @@ class Round:
         current_player: Player | None = None,
     ) -> "Round":
         if not players:
-            return cls(number, PlayerTurn.end_of_round(), players)
+            return cls(number, PlayerTurn.null(), players)
 
         if current_player is None:
             current_player = players[0]
 
         return cls(number, PlayerTurn(current_player), players)
 
-    def next_round(self) -> "Round":
+    @property
+    def _next_player(self) -> Player | None:
         player_index = self._players.index(self.current_player)
         try:
-            next_player = self._players[player_index + 1]
+            return self._players[player_index + 1]
         except IndexError:
-            round = self.__class__.from_players(self._players, self.number + 1)
-        else:
-            player_turn = PlayerTurn(next_player)
-            round = self.__class__(self.number, player_turn, self._players)
-        return round
+            return None
+
+    def next_round(self) -> Union["Round", GameOver]:
+        match (self._next_player):
+            case None:
+                if self.current_player.has_all_categories_scored:
+                    return GameOver()
+                return self.__class__.from_players(self._players, self.number + 1)
+            case Player() as next_player:
+                return self.__class__(
+                    self.number, PlayerTurn(next_player), self._players
+                )
 
     def next_attempt(self) -> "Round":
         return self.__class__(self.number, self.player_turn.next_attempt, self._players)
@@ -81,16 +101,16 @@ class Round:
         )
 
     @property
-    def is_ended(self) -> bool:
-        return bool(self.player_turn)
-
-    @property
     def current_player(self) -> Player:
         return self.player_turn.player
 
     @classmethod
     def zero(cls) -> "Round":
-        return cls(0, PlayerTurn.end_of_round(), [])
+        return cls(0, PlayerTurn.null(), [])
+
+    @property
+    def is_ended(self) -> bool:
+        return isinstance(self.number, GameOver)
 
 
 class GameStatus(Enum):
@@ -104,7 +124,7 @@ class GameStatus(Enum):
 class Board:
     players: Players
     status: GameStatus
-    round: Round
+    round: Round | GameOver
     dices: Dices
     game_id: UUID
     version: int
@@ -129,7 +149,7 @@ class Board:
 
     @apply.register
     def game_created(self, event: evt.GameCreated, /):
-        self.game_id = event.uuid
+        self.game_id = event.game
         self.status = GameStatus.PENDING
 
     @apply.register
@@ -170,5 +190,12 @@ class Board:
 
     @apply.register
     def roll_performed(self, event: evt.RollPerformed):
-        self.round = self.round.with_attempt(event.attempt_nb)
+        match self.round:
+            case Round() as round:
+                self.round = round.with_attempt(event.attempt_nb)
+        self.inc_version()
+
+    @apply.register
+    def game_ended(self, _: evt.GameEnded, /):
+        self.status = GameStatus.OVER
         self.inc_version()

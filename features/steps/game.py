@@ -31,6 +31,29 @@ def keep_dices(context, player_name: str, dices: str):
         execute(cmd)
 
 
+@when("the last round is played")
+def last_round(context):
+    players = views(context.game_uuid).players
+    for category in (
+        "Aces",
+        "Twos",
+        "Threes",
+        "Fours",
+        "Fives",
+        "Sixes",
+        "Three Of A Kind",
+        "Four Of A Kind",
+        "Full House",
+        "Small Straight",
+        "Large Straight",
+        "Yahtzee",
+        "Chance",
+    ):
+        for player in players:
+            roll_dices(context, player["name"])
+            scores(context, player["name"], category)
+
+
 @then("it's {player_name}'s turn to play")
 def check_turn(context, player_name: str):
     current_player = views(context.game_uuid).current_player
@@ -84,3 +107,9 @@ def dices_may_have_different_value(context, dices: str):
     for dice_num in dices_numbers:
         dice = views(context.game_uuid).dice(dice_num)
         assert dice["position"] == "on_the_track", f"{dice_num} is not on the track"
+
+
+@then("the game is over")
+def game_is_over(context):
+    game_state = views(context.game_uuid).state
+    assert game_state == "over", f"The game is not over but {game_state}"

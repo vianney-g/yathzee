@@ -35,3 +35,7 @@ class GameViews:
 
     def dice(self, dice_number: Literal[1, 2, 3, 4, 5]) -> dict:
         return self._game.board.dices.get(DiceNumber(dice_number)).asdict()
+
+    @property
+    def state(self) -> Literal["new", "pending", "started", "over"]:
+        return self._game.board.status.value
